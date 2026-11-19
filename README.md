@@ -2,7 +2,7 @@
 
 ### A modern full-stack ledger and transaction management system
 
-Manage accounts, record credit and debit transactions, and track account balances through a clean React interface backed by a TypeScript REST API.
+Manage accounts, record credit and debit transactions, and track balances with a React and TypeScript frontend, an Express REST API, and a PostgreSQL database.
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React" />
@@ -22,6 +22,7 @@ Manage accounts, record credit and debit transactions, and track account balance
 - [Architecture](#architecture)
 - [Technology Stack](#technology-stack)
 - [Getting Started](#getting-started)
+- [Deployment](#deployment)
 - [API Documentation](#api-documentation)
 - [Project Structure](#project-structure)
 - [Assumptions and Design Decisions](#assumptions-and-design-decisions)
@@ -152,7 +153,14 @@ cd backend
 npm install
 ```
 
-Copy `.env.example` to `.env` and configure the required database connection and server environment variables.
+Create `backend/.env` and configure the database connection and server port:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
+PORT=5000
+```
+
+URL-encode any special characters in the database password.
 
 Create the PostgreSQL database and apply the schema from `database/schema.sql`.
 
@@ -171,7 +179,11 @@ cd frontend
 npm install
 ```
 
-Configure the frontend API base URL using the environment variable expected by the application.
+For local development, the frontend defaults to `http://localhost:5000/api`. To use another API, create `frontend/.env.local` and set `VITE_API_BASE_URL` to the backend API URL, including `/api`.
+
+```env
+VITE_API_BASE_URL=http://localhost:5000/api
+```
 
 Start the frontend:
 
@@ -181,7 +193,16 @@ npm run dev
 
 Open the local URL displayed by Vite.
 
-> **Note:** Use the environment variable names and setup commands defined in the actual project configuration.
+## Deployment
+
+Ledger Flow consists of two deployable applications and a PostgreSQL database. On Vercel, create **two projects from this repository**:
+
+| Component | Vercel root directory | Framework preset | Configuration |
+|---|---|---|---|
+| Frontend | `frontend` | Vite | Set `VITE_API_BASE_URL` to the deployed backend URL ending in `/api`. |
+| Backend | `backend` | Express | Set `DATABASE_URL` to the PostgreSQL connection string. |
+
+Use a hosted PostgreSQL database and make sure its connection string is available to the backend project. Add environment variables in each Vercel project's **Settings → Environment Variables**. Since Vite embeds `VITE_API_BASE_URL` during the frontend build, redeploy the frontend after changing it.
 
 ## API Documentation
 
