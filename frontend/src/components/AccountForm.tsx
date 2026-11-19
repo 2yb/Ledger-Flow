@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { API_BASE_URL } from "../services/api";
 
 interface AccountFormProps {
   onCreate: () => Promise<void>;
@@ -28,7 +29,7 @@ export default function AccountForm({
       setError("");
 
       const response = await fetch(
-        "http://localhost:5000/api/accounts",
+        `${API_BASE_URL}/accounts`,
         {
           method: "POST",
           headers: {

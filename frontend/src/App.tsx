@@ -4,8 +4,7 @@ import AccountForm from "./components/AccountForm";
 import TransactionForm from "./components/TransactionForm";
 import AccountCard from "./components/AccountCard";
 import TransactionTable from "./components/TransactionTable";
-
-const API_URL = "http://localhost:5000/api";
+import { API_BASE_URL } from "./services/api";
 
 export interface Account {
   id: number;
@@ -59,7 +58,7 @@ function App() {
       setLoadingAccounts(true);
 
       const response = await fetch(
-        `${API_URL}/accounts`
+        `${API_BASE_URL}/accounts`
       );
 
       const result = await response.json();
@@ -108,7 +107,7 @@ function App() {
       setLoadingTransactions(true);
 
       const response = await fetch(
-        `${API_URL}/accounts/${accountId}/transactions?page=${requestedPage}&limit=${TRANSACTIONS_PER_PAGE}`
+        `${API_BASE_URL}/accounts/${accountId}/transactions?page=${requestedPage}&limit=${TRANSACTIONS_PER_PAGE}`
       );
 
       const result = await response.json();
@@ -685,7 +684,7 @@ function App() {
                       ) => {
                         const response =
                           await fetch(
-                            `${API_URL}/accounts/${selectedAccount.id}/transactions`,
+                            `${API_BASE_URL}/accounts/${selectedAccount.id}/transactions`,
                             {
                               method:
                                 "POST",
