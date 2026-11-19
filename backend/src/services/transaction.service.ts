@@ -1,5 +1,5 @@
-import { PoolClient } from "pg";
-import { pool } from "../config/database";
+import { pool, withTransaction } from "../config/database";
+import { HttpError } from "../utils/http-error";
 
 export type TransactionType = "credit" | "debit";
 
@@ -30,11 +30,7 @@ export interface Transaction {
 export async function createTransaction(
   input: CreateTransactionInput
 ): Promise<Transaction> {
-  const client = await pool.connect();
-
-  try {
-    await client.query("BEGIN");
-
+  return withTransaction(async (client) => {
     // Lock the account row so concurrent transactions cannot
     // modify the same account balance at the same time.
     const accountResult = await client.query(
@@ -48,9 +44,7 @@ export async function createTransaction(
     );
 
     if (accountResult.rows.length === 0) {
-      const error = new Error("Account not found.");
-      (error as any).statusCode = 404;
-      throw error;
+      throw new HttpError("Account not found.", 404);
     }
 
     const currentBalance = Number(accountResult.rows[0].balance);
@@ -68,18 +62,15 @@ export async function createTransaction(
     );
 
     if (duplicateResult.rows.length > 0) {
-      const error = new Error(
-        "Duplicate reference_id for this account."
+      throw new HttpError(
+        "Duplicate reference_id for this account.",
+        409,
       );
-      (error as any).statusCode = 409;
-      throw error;
     }
 
     // Debit transactions require sufficient balance.
     if (input.type === "debit" && currentBalance < input.amount) {
-      const error = new Error("Insufficient balance.");
-      (error as any).statusCode = 409;
-      throw error;
+      throw new HttpError("Insufficient balance.", 409);
     }
 
     const balanceChange =
@@ -88,6 +79,12 @@ export async function createTransaction(
         : -input.amount;
 
     const newBalance = currentBalance + balanceChange;
+    if (!Number.isSafeInteger(newBalance)) {
+      throw new HttpError(
+        "The resulting balance exceeds the supported range.",
+        409,
+      );
+    }
 
     // Insert the immutable transaction record.
     const transactionResult = await client.query<Transaction>(
@@ -130,19 +127,8 @@ export async function createTransaction(
       [newBalance, input.accountId]
     );
 
-    // Commit both operations together.
-    await client.query("COMMIT");
-
     return transactionResult.rows[0];
-  } catch (error) {
-    // If anything failed, neither the transaction nor balance
-    // update should remain persisted.
-    await client.query("ROLLBACK");
-
-    throw error;
-  } finally {
-    client.release();
-  }
+  });
 }
 
 /**
@@ -175,9 +161,7 @@ export async function getAccountTransactions(
   );
 
   if (accountResult.rows.length === 0) {
-    const error = new Error("Account not found.");
-    (error as any).statusCode = 404;
-    throw error;
+    throw new HttpError("Account not found.", 404);
   }
 
   const countResult = await pool.query<{ count: string }>(

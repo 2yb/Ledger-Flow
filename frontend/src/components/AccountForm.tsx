@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { API_BASE_URL } from "../services/api";
+import { createAccount } from "../services/api";
 
 interface AccountFormProps {
   onCreate: () => Promise<void>;
@@ -28,28 +28,7 @@ export default function AccountForm({
       setLoading(true);
       setError("");
 
-      const response = await fetch(
-        `${API_BASE_URL}/accounts`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            name: trimmedName,
-          }),
-        }
-      );
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(
-          result.error?.message ||
-            "Failed to create account."
-        );
-      }
-
+      await createAccount(trimmedName);
       setName("");
       await onCreate();
     } catch (error) {
@@ -66,43 +45,51 @@ export default function AccountForm({
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-6">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-          Account
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300/80">
+          New ledger
         </p>
-
-        <h2 className="text-2xl font-bold text-slate-900">
-          Create Account
+        <h2 className="text-xl font-semibold text-white">
+          Create an account
         </h2>
-
-        <p className="mt-1 text-sm text-slate-500">
-          Add a new account to your ledger.
+        <p className="mt-2 text-sm leading-6 text-slate-400">
+          Set up a place to track a balance and its transactions.
         </p>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row">
+      <label
+        htmlFor="account-name"
+        className="mb-2 block text-xs font-semibold text-slate-300"
+      >
+        Account name
+      </label>
+      <div className="flex flex-col gap-3 sm:flex-row">
         <input
+          id="account-name"
           type="text"
           value={name}
           onChange={(event) =>
             setName(event.target.value)
           }
-          placeholder="e.g. Savings Account"
+          placeholder="e.g. Everyday account"
           maxLength={100}
           disabled={loading}
-          className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-50"
+          className="min-w-0 flex-1 rounded-xl border border-white/10 bg-[#0b111c] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-300/50 focus:ring-2 focus:ring-emerald-300/10 disabled:opacity-50"
         />
 
         <button
           type="submit"
           disabled={loading || !name.trim()}
-          className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-[#07120f] transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          {loading ? "Creating..." : "Create Account"}
+          {loading ? "Creating..." : "Create account"}
         </button>
       </div>
 
       {error && (
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div
+          role="alert"
+          className="mt-4 rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200"
+        >
           {error}
         </div>
       )}

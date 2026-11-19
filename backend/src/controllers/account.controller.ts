@@ -1,9 +1,10 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 import {
   createAccount,
   getAccountById,
   getAllAccounts,
 } from "../services/account.service";
+import { validateCreateAccount } from "../validators/account.validator";
 
 /**
  * POST /api/accounts
@@ -16,7 +17,7 @@ export async function createAccountController(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { name } = req.body;
+    const { name } = validateCreateAccount(req.body);
 
     const account = await createAccount(name);
 

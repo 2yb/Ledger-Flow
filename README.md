@@ -164,6 +164,12 @@ URL-encode any special characters in the database password.
 
 Create the PostgreSQL database and apply the schema from `database/schema.sql`.
 
+Run the backend build and input-validation tests:
+
+```bash
+npm test
+```
+
 Start the backend using the development script configured in `backend/package.json`:
 
 ```bash
@@ -219,16 +225,20 @@ ledger-flow/
 ├── backend/
 │   ├── database/
 │   │   └── schema.sql
+│   ├── tests/
 │   └── src/
 │       ├── config/
 │       ├── controllers/
 │       ├── middleware/
 │       ├── routes/
 │       ├── services/
+│       ├── utils/
 │       └── validators/
 ├── frontend/
+│   ├── public/
 │   └── src/
 │       ├── components/
+│       ├── services/
 │       └── types/
 ├── docs/
 │   └── screenshots/

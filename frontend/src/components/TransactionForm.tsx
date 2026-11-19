@@ -31,9 +31,15 @@ export default function TransactionForm({
 
     const rupees = Number(amount);
     const trimmedReference = referenceId.trim();
+    const amountInPaise = Math.round(rupees * 100);
 
     if (!Number.isFinite(rupees) || rupees <= 0) {
       setError("Please enter a valid amount.");
+      return;
+    }
+
+    if (!Number.isSafeInteger(amountInPaise) || amountInPaise <= 0) {
+      setError("Amount is outside the supported range.");
       return;
     }
 
@@ -48,7 +54,7 @@ export default function TransactionForm({
 
       await onSubmit({
         type,
-        amount: Math.round(rupees * 100),
+        amount: amountInPaise,
         description:
           description.trim() || undefined,
         reference_id: trimmedReference,
@@ -72,111 +78,123 @@ export default function TransactionForm({
   return (
     <form onSubmit={handleSubmit}>
       <div className="mb-6">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-400">
-          Ledger Entry
+        <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-emerald-300/80">
+          New ledger entry
         </p>
 
-        <h2 className="text-2xl font-bold text-slate-900">
-          New Transaction
+        <h2 className="text-xl font-semibold text-white">
+          Record a transaction
         </h2>
 
-        <p className="mt-1 text-sm text-slate-500">
-          Record a credit or debit against this account.
+        <p className="mt-2 text-sm leading-6 text-slate-400">
+          Add a credit or debit to the selected account.
         </p>
       </div>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        {/* TYPE */}
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-700">
-            Transaction Type
-          </label>
+      <div className="space-y-5">
+        <fieldset>
+          <legend className="mb-2 block text-xs font-semibold text-slate-300">
+            Transaction type
+          </legend>
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-white/[0.07] bg-[#0b111c] p-1.5">
+            {(["credit", "debit"] as const).map((transactionType) => (
+              <button
+                key={transactionType}
+                type="button"
+                aria-pressed={type === transactionType}
+                disabled={loading}
+                onClick={() => setType(transactionType)}
+                className={`rounded-lg px-3 py-2.5 text-sm font-semibold capitalize transition ${
+                  type === transactionType
+                    ? transactionType === "credit"
+                      ? "bg-emerald-300/15 text-emerald-200"
+                      : "bg-rose-300/15 text-rose-200"
+                    : "text-slate-500 hover:text-slate-200"
+                }`}
+              >
+                {transactionType}
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
-          <select
-            value={type}
-            onChange={(event) =>
-              setType(
-                event.target.value as TransactionType
-              )
-            }
-            disabled={loading}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-50"
+        <div>
+          <label
+            htmlFor="transaction-amount"
+            className="mb-2 block text-xs font-semibold text-slate-300"
           >
-            <option value="credit">
-              Credit
-            </option>
-
-            <option value="debit">
-              Debit
-            </option>
-          </select>
-        </div>
-
-        {/* AMOUNT */}
-        <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-700">
             Amount (₹)
           </label>
-
-          <input
-            type="number"
-            min="0.01"
-            step="0.01"
-            value={amount}
-            onChange={(event) =>
-              setAmount(event.target.value)
-            }
-            placeholder="100.00"
-            disabled={loading}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-50"
-          />
+          <div className="relative">
+            <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-sm text-slate-500">
+              ₹
+            </span>
+            <input
+              id="transaction-amount"
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={amount}
+              onChange={(event) => setAmount(event.target.value)}
+              placeholder="0.00"
+              disabled={loading}
+              className="w-full rounded-xl border border-white/10 bg-[#0b111c] py-3 pl-9 pr-4 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-300/50 focus:ring-2 focus:ring-emerald-300/10 disabled:opacity-50"
+            />
+          </div>
         </div>
 
-        {/* REFERENCE */}
         <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-700">
+          <label
+            htmlFor="transaction-reference"
+            className="mb-2 block text-xs font-semibold text-slate-300"
+          >
             Reference ID
           </label>
-
           <input
+            id="transaction-reference"
             type="text"
             value={referenceId}
             onChange={(event) =>
               setReferenceId(event.target.value)
             }
-            placeholder="REF-003"
+            placeholder="e.g. INV-2048"
             maxLength={100}
             disabled={loading}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-50"
+            className="w-full rounded-xl border border-white/10 bg-[#0b111c] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-300/50 focus:ring-2 focus:ring-emerald-300/10 disabled:opacity-50"
           />
         </div>
 
-        {/* DESCRIPTION */}
         <div>
-          <label className="mb-2 block text-sm font-semibold text-slate-700">
-            Description
+          <label
+            htmlFor="transaction-description"
+            className="mb-2 block text-xs font-semibold text-slate-300"
+          >
+            Description <span className="font-normal text-slate-500">· optional</span>
           </label>
-
           <input
+            id="transaction-description"
             type="text"
             value={description}
             onChange={(event) =>
               setDescription(event.target.value)
             }
-            placeholder="Transaction description"
+            placeholder="What is this transaction for?"
             disabled={loading}
-            className="w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-100 disabled:bg-slate-50"
+            className="w-full rounded-xl border border-white/10 bg-[#0b111c] px-4 py-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-emerald-300/50 focus:ring-2 focus:ring-emerald-300/10 disabled:opacity-50"
           />
         </div>
       </div>
 
       {error && (
-        <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+        <div
+          role="alert"
+          className="mt-5 rounded-xl border border-rose-400/20 bg-rose-400/[0.07] px-4 py-3 text-sm text-rose-200"
+        >
           {error}
         </div>
       )}
 
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6">
         <button
           type="submit"
           disabled={
@@ -184,11 +202,11 @@ export default function TransactionForm({
             !amount ||
             !referenceId.trim()
           }
-          className="rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-300"
+          className="w-full rounded-xl bg-emerald-300 px-5 py-3 text-sm font-bold text-[#07120f] transition hover:bg-emerald-200 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {loading
             ? "Processing..."
-            : "Create Transaction"}
+            : `Create ${type}`}
         </button>
       </div>
     </form>

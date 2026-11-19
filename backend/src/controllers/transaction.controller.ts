@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from "express";
+import type { Request, Response, NextFunction } from "express";
 
 import {
   createTransaction,
@@ -9,6 +9,7 @@ import {
   validateCreateTransaction,
   validatePagination,
 } from "../validators/transaction.validator";
+import { HttpError } from "../utils/http-error";
 
 /**
  * POST /api/accounts/:accountId/transactions
@@ -48,10 +49,8 @@ export async function getTransactionsController(
   try {
     const accountId = Number(req.params.accountId);
 
-    if (!Number.isInteger(accountId) || accountId <= 0) {
-      const error = new Error("Invalid account ID.");
-      (error as any).statusCode = 400;
-      throw error;
+    if (!Number.isSafeInteger(accountId) || accountId <= 0) {
+      throw new HttpError("Invalid account ID.", 400);
     }
 
     const { page, limit } = validatePagination(

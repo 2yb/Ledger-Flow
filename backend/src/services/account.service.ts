@@ -1,4 +1,5 @@
 import { pool } from "../config/database";
+import { HttpError } from "../utils/http-error";
 
 /**
  * Account returned by the API.
@@ -16,13 +17,7 @@ export interface Account {
  *
  * New accounts always start with a balance of 0.
  */
-export async function createAccount(name: unknown): Promise<Account> {
-  if (typeof name !== "string" || name.trim().length === 0) {
-    const error = new Error("Account name must be provided.");
-    (error as any).statusCode = 400;
-    throw error;
-  }
-
+export async function createAccount(name: string): Promise<Account> {
   const result = await pool.query<Account>(
     `
       INSERT INTO accounts (name)
@@ -34,7 +29,7 @@ export async function createAccount(name: unknown): Promise<Account> {
         created_at AS "createdAt",
         updated_at AS "updatedAt"
     `,
-    [name.trim()]
+    [name]
   );
 
   return result.rows[0];
@@ -64,10 +59,8 @@ export async function getAllAccounts(): Promise<Account[]> {
  * Returns an account by ID.
  */
 export async function getAccountById(id: number): Promise<Account> {
-  if (!Number.isInteger(id) || id <= 0) {
-    const error = new Error("Invalid account ID.");
-    (error as any).statusCode = 400;
-    throw error;
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    throw new HttpError("Invalid account ID.", 400);
   }
 
   const result = await pool.query<Account>(
@@ -85,9 +78,7 @@ export async function getAccountById(id: number): Promise<Account> {
   );
 
   if (result.rows.length === 0) {
-    const error = new Error("Account not found.");
-    (error as any).statusCode = 404;
-    throw error;
+    throw new HttpError("Account not found.", 404);
   }
 
   return result.rows[0];

@@ -1,6 +1,12 @@
-import { CreateTransactionInput } from "../services/transaction.service";
+import type {
+  CreateTransactionInput,
+  TransactionType,
+} from "../services/transaction.service";
+import { HttpError } from "../utils/http-error";
 
-const VALID_TRANSACTION_TYPES = ["credit", "debit"] as const;
+function isTransactionType(value: unknown): value is TransactionType {
+  return value === "credit" || value === "debit";
+}
 
 /**
  * Validates and normalizes the transaction request body.
@@ -9,49 +15,41 @@ export function validateCreateTransaction(
   body: unknown,
   accountId: number
 ): CreateTransactionInput {
-  if (!body || typeof body !== "object") {
-    const error = new Error("Invalid request body.");
-    (error as any).statusCode = 400;
-    throw error;
+  if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    throw new HttpError("Invalid request body.", 400);
   }
 
   const data = body as Record<string, unknown>;
 
   const { type, amount, description, reference_id } = data;
 
-  if (
-    typeof type !== "string" ||
-    !VALID_TRANSACTION_TYPES.includes(
-      type as (typeof VALID_TRANSACTION_TYPES)[number]
-    )
-  ) {
-    const error = new Error(
-      "Transaction type must be either credit or debit."
+  if (!isTransactionType(type)) {
+    throw new HttpError(
+      "Transaction type must be either credit or debit.",
+      400,
     );
-    (error as any).statusCode = 400;
-    throw error;
   }
 
   if (
     typeof amount !== "number" ||
-    !Number.isFinite(amount) ||
-    !Number.isInteger(amount) ||
+    !Number.isSafeInteger(amount) ||
     amount <= 0
   ) {
-    const error = new Error(
-      "Amount must be a positive integer representing paise."
+    throw new HttpError(
+      "Amount must be a positive safe integer representing paise.",
+      400,
     );
-    (error as any).statusCode = 400;
-    throw error;
   }
 
   if (
     typeof reference_id !== "string" ||
     reference_id.trim().length === 0
   ) {
-    const error = new Error("reference_id must be provided.");
-    (error as any).statusCode = 400;
-    throw error;
+    throw new HttpError("reference_id must be provided.", 400);
+  }
+
+  if (reference_id.trim().length > 100) {
+    throw new HttpError("reference_id must be 100 characters or fewer.", 400);
   }
 
   if (
@@ -59,20 +57,16 @@ export function validateCreateTransaction(
     description !== null &&
     typeof description !== "string"
   ) {
-    const error = new Error("description must be a string.");
-    (error as any).statusCode = 400;
-    throw error;
+    throw new HttpError("description must be a string.", 400);
   }
 
-  if (!Number.isInteger(accountId) || accountId <= 0) {
-    const error = new Error("Invalid account ID.");
-    (error as any).statusCode = 400;
-    throw error;
+  if (!Number.isSafeInteger(accountId) || accountId <= 0) {
+    throw new HttpError("Invalid account ID.", 400);
   }
 
   return {
     accountId,
-    type: type as "credit" | "debit",
+    type,
     amount,
     description:
       typeof description === "string"
@@ -93,26 +87,24 @@ export function validatePagination(
   const limit = limitValue === undefined ? 10 : Number(limitValue);
 
   if (
-    !Number.isInteger(page) ||
+    !Number.isSafeInteger(page) ||
     page < 1
   ) {
-    const error = new Error(
-      "Invalid pagination parameter: page must be a positive integer."
+    throw new HttpError(
+      "Invalid pagination parameter: page must be a positive integer.",
+      400,
     );
-    (error as any).statusCode = 400;
-    throw error;
   }
 
   if (
-    !Number.isInteger(limit) ||
+    !Number.isSafeInteger(limit) ||
     limit < 1 ||
     limit > 100
   ) {
-    const error = new Error(
-      "Invalid pagination parameter: limit must be between 1 and 100."
+    throw new HttpError(
+      "Invalid pagination parameter: limit must be between 1 and 100.",
+      400,
     );
-    (error as any).statusCode = 400;
-    throw error;
   }
 
   return { page, limit };
