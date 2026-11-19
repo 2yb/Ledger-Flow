@@ -12,6 +12,28 @@ Manage accounts, record credit and debit transactions, and track balances with a
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
 </p>
 
+## Architecture
+
+```mermaid
+flowchart LR
+    browser["User's browser"]
+
+    subgraph vercel["Vercel · separate frontend and backend projects"]
+        frontend["Frontend project<br/>React · TypeScript · Vite<br/>Root: frontend/"]
+        api["Backend project<br/>Node.js · Express · TypeScript<br/>Vercel Functions · Root: backend/"]
+    end
+
+    subgraph supabase["Supabase"]
+        postgres[("PostgreSQL<br/>Accounts · Transactions")]
+    end
+
+    browser <-->|HTTPS| frontend
+    frontend <-->|REST / JSON · VITE_API_BASE_URL| api
+    api <-->|SQL · DATABASE_URL| postgres
+```
+
+The GitHub repository deploys the frontend and API as separate Vercel projects. The browser calls the Express API over HTTPS; the API reads and updates account and transaction data in Supabase PostgreSQL. `DATABASE_URL` stays on the backend and is never needed by the frontend.
+
 ---
 
 ## Table of Contents
@@ -94,32 +116,6 @@ View the backend health endpoint response.
 ![Backend Health](docs/screenshots/Backend-Health.png)
 
 ---
-
-## Architecture
-
-The application separates frontend presentation, HTTP request handling, business logic, and database access.
-
-```text
-┌──────────────────────────────┐
-│     React + TypeScript       │
-│          Frontend            │
-└──────────────┬───────────────┘
-               │ HTTP / REST
-┌──────────────▼───────────────┐
-│      Express API Routes      │
-├──────────────────────────────┤
-│ Controllers & Validation     │
-├──────────────────────────────┤
-│         Services             │
-├──────────────────────────────┤
-│     PostgreSQL Access        │
-└──────────────┬───────────────┘
-               │ SQL
-┌──────────────▼───────────────┐
-│          PostgreSQL          │
-│   Accounts & Transactions    │
-└──────────────────────────────┘
-```
 
 ## Technology Stack
 
